@@ -1,0 +1,10 @@
+[
+  {
+    "volunteer_id": "V-001",
+    "vehicle_capacity": 8,
+    "area": "Campus",
+    "available_from": 0,
+    "available_until": 120,
+    "max_pickups": 2
+  }
+]
