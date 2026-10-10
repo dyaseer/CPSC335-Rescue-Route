@@ -71,9 +71,8 @@ def schedule_fifo(donations, recipients, volunteers, check_match, update_resourc
 
 def greedy_priority(donation):
     """Return (expiry_time, -quantity, ready_time) for ascending sorting."""
-    # TODO: Build the priority tuple. Stable sorting preserves input order
-    # when all three values are tied.
-    raise NotImplementedError
+    # Negating quantity puts larger donations first when expiration is tied.
+    return (donation["expiry_time"], -donation["quantity"], donation["ready_time"])
 
 
 def schedule_greedy(donations, recipients, volunteers):
