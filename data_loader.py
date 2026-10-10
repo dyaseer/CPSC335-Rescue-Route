@@ -4,7 +4,13 @@
 def load_json(file_path):
     """Return a list of record dictionaries from a JSON file."""
     # TODO: Open the file, read JSON, and reject a non-list or non-record input.
-    raise NotImplementedError
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    if not isinstance(data, list):
+        raise ValueError("Loaded data is not a list")
+    if not all(isinstance(record, dict) for record in data):
+        raise ValueError("Not all records are dictionaries")
+    return data
 
 
 def validate_data(donations, recipients, volunteers):
