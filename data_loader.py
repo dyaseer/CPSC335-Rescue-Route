@@ -1,4 +1,5 @@
 """JSON loading and input validation (data and matching lead)."""
+import json
 
 def load_json(file_path):
     """Return a list of record dictionaries from a JSON file."""
