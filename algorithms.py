@@ -88,7 +88,17 @@ def schedule_greedy(donations, recipients, volunteers, check_match, update_resou
 
 
 def compare_strategies(fifo_metrics, greedy_metrics):
-    """Return greedy-minus-FIFO differences using the quality lead's metrics."""
-    # TODO: Compare assigned donations, rescued quantity, and urgent rescue rate.
-    # Discuss where greedy helps and where it may defer less urgent donations.
-    raise NotImplementedError
+    """Return greedy-minus-FIFO differences for the three comparison metrics.
+
+    Both input dictionaries must contain the metric keys below. Positive values
+    favor greedy; negative values favor FIFO; zero indicates a tie. Urgent rescue
+    rates use percentages, so their difference is in percentage points.
+    """
+    differences = {}
+    for metric in (
+        "donations_assigned",
+        "food_quantity_rescued",
+        "urgent_rescue_rate",
+    ):
+        differences[metric] = greedy_metrics[metric] - fifo_metrics[metric]
+    return differences
