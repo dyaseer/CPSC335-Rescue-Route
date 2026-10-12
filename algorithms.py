@@ -75,11 +75,16 @@ def greedy_priority(donation):
     return (donation["expiry_time"], -donation["quantity"], donation["ready_time"])
 
 
-def schedule_greedy(donations, recipients, volunteers):
-    """Return one assignment or rejection per donation, in greedy priority order."""
-    # TODO: Copy resource data and sort donations using greedy_priority.
-    # Use the same matching and resource rules as FIFO.
-    raise NotImplementedError
+def schedule_greedy(donations, recipients, volunteers, check_match, update_resources):
+    """Schedule by expiry, then quantity, then ready time; preserve complete ties.
+
+    Use the same matching helpers as FIFO. sorted creates a new list, and FIFO
+    copies the records and resources so the original inputs stay unchanged.
+    """
+    ordered_donations = sorted(donations, key=greedy_priority)
+    return schedule_fifo(
+        ordered_donations, recipients, volunteers, check_match, update_resources
+    )
 
 
 def compare_strategies(fifo_metrics, greedy_metrics):
