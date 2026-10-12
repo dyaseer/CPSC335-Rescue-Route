@@ -6,8 +6,7 @@ ready_time. Complete ties keep input order. Confirm this rule with the team.
 
 from copy import deepcopy
 
-# TODO: Analyze time and space complexity for both schedulers using
-# D = donations, R = recipients, and V = volunteers. Include sorting and matching.
+# See README.md, "Complexity analysis", for scheduler costs and helper assumptions.
 
 
 def schedule_fifo(donations, recipients, volunteers, check_match, update_resources):
