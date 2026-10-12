@@ -10,7 +10,44 @@ TODO: Describe the modules, input fields, and assignment records.
 
 ## Algorithms and complexity
 
-TODO: Add the final algorithm design, agreed greedy rule, and comparison results.
+TODO: Confirm the greedy rule with the team and add actual comparison results.
+
+### Why we use greedy
+
+The greedy scheduler considers donations in this order:
+
+1. Earlier expiration first, because that food has less time left to be rescued.
+2. If expiration times match, larger quantities first, to try to rescue more food.
+3. If quantities also match, earlier ready times first, to favor food ready sooner.
+4. If all three values match, keep the original input order.
+
+For each donation, it chooses the first recipient and volunteer that meet the
+matching rules. It then updates their remaining resources before considering
+the next donation. FIFO uses the same checks but keeps donation input order.
+
+This rule is simple to explain and gives urgent food the first chance at limited
+capacity. It makes a choice for the next donation rather than trying every
+possible schedule. It aims to help urgent donations, but it does not guarantee
+the most food rescued or the most donations assigned.
+
+### Where greedy can fall short
+
+- An urgent donation can use capacity that could have served several other
+  donations. Larger quantities can also leave smaller donations without space.
+- The first matching recipient or volunteer may be needed by a later donation
+  that has fewer options. The scheduler does not go back and change its choices.
+- Less urgent donations can be considered later and lose access to capacity,
+  even if they appeared earlier in the input.
+- Priority is based only on expiration, quantity, and ready time. It does not
+  choose the best route or consider how long a donation has been waiting.
+
+For example, suppose a recipient has capacity for 10 units. All other matching
+checks pass. One donation has 6 units and expires sooner; two others have
+5 units each and expire later. Greedy assigns the urgent 6-unit donation,
+leaving only 4 units of capacity. Neither 5-unit donation fits. Choosing the two
+5-unit donations instead would rescue 10 units, but leave the urgent donation
+unassigned. This shows the trade-off between rescuing urgent food and rescuing
+the greatest total quantity.
 
 ### Complexity analysis
 
