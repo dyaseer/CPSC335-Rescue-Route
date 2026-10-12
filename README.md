@@ -49,6 +49,36 @@ leaving only 4 units of capacity. Neither 5-unit donation fits. Choosing the two
 unassigned. This shows the trade-off between rescuing urgent food and rescuing
 the greatest total quantity.
 
+### Fairness discussion
+
+FIFO gives donations a turn in input order. Greedy gives food that expires
+sooner the first chance. Neither rule guarantees that every donation gets
+assigned when capacity is limited.
+
+Our sample data shows the difference. D-001 appears first, has 6 units, and
+expires at minute 90. D-002 appears second, also has 6 units, and expires at
+minute 30. The recipient has capacity for 10 units. Assuming all other matching
+checks pass, only one donation fits:
+
+- FIFO assigns D-001 first. The remaining capacity is 4 units, so D-002 is rejected.
+- Greedy considers D-002 first because it expires sooner. D-001 is considered
+  later and rejected because only 4 units of capacity remain.
+
+Greedy protects the urgent donation, but the donor that appeared first misses
+out. Larger donations also get priority when expiration times match, so smaller
+donations may miss out even if they appeared earlier.
+
+Every donation is still considered once in the current program. A donation
+considered later is not automatically saved for another run; it may be marked
+unassigned. If a future version keeps waiting donations across runs, repeated
+urgent arrivals could keep pushing less urgent donations back. Never getting a
+turn to receive resources is called starvation.
+
+One possible improvement is to increase a donation's priority as it waits.
+That could give waiting donors more chances, but it could also delay food that
+expires sooner. The current program does not include this extra rule. Comparing
+FIFO and greedy helps us show which donations each rule favors.
+
 ### Complexity analysis
 
 **D** = donations, **R** = recipients, and **V** = volunteers.
@@ -98,7 +128,8 @@ The current test skeletons are skipped and do not validate program behavior yet.
 
 ## Assumptions and limitations
 
-TODO: Document the simulation rules, metric definitions, and fairness trade-offs.
+TODO: Document the simulation rules and metric definitions. Fairness trade-offs
+are discussed above.
 
 ## Team contributions and references
 
