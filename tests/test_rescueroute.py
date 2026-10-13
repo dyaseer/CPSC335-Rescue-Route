@@ -48,10 +48,28 @@ class RescueRouteTests(unittest.TestCase):
         self.assertIsInstance(assignment["decision_reason"], str)
         self.assertTrue(assignment["decision_reason"].strip())
 
-    @unittest.skip("Test assertions are not implemented yet")
     def test_duplicate_donation_id(self):
-        # TODO: Assert validation rejects duplicate donation IDs.
-        pass
+        # Step 1: Create two valid donations with different IDs.
+        donations = [
+            {
+                "donation_id": "D-001", "donor_name": "Campus Cafe",
+                "food_type": "prepared_meals", "quantity": 6,
+                "expiry_time": 90, "pickup_area": "Campus", "ready_time": 0,
+            },
+            {
+                "donation_id": "D-002", "donor_name": "Campus Event",
+                "food_type": "prepared_meals", "quantity": 4,
+                "expiry_time": 30, "pickup_area": "Campus", "ready_time": 0,
+            },
+        ]
+
+        # Step 2: Different donation IDs should pass validation.
+        self.assertIsNone(validate_data(donations, [], []))
+
+        # Step 3: Give both donations the same ID and check for a duplicate error.
+        donations[1]["donation_id"] = "D-001"
+        with self.assertRaisesRegex(ValueError, "Duplicate donation_id"):
+            validate_data(donations, [], [])
 
     @unittest.skip("Test assertions are not implemented yet")
     def test_expired_or_nearly_expired_donation(self):
