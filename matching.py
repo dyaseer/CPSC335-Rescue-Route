@@ -53,9 +53,18 @@ def update_resources(assignment, donation, recipients, volunteers):
     """Update the assigned recipient and volunteer in the scheduler's copies.
 
     Return None. Called only after an assignment with status 'assigned'.
+    Pickup is instantaneous, so the volunteer is available again at that time.
+    Vehicle capacity stays the same because it limits each pickup.
     """
-    # TODO: Find the recipient and volunteer using the IDs in assignment.
-    # TODO: Subtract donation quantity from recipient capacity.
-    # TODO: Decrease volunteer max_pickups and update available_from using
-    # the agreed time model. Vehicle capacity remains a per-pickup limit.
-    raise NotImplementedError
+    # Step 1: Find the selected recipient and reduce remaining capacity.
+    for recipient in recipients:
+        if recipient["recipient_id"] == assignment["recipient_id"]:
+            recipient["capacity"] -= donation["quantity"]
+            break
+
+    # Step 2: Find the selected volunteer and update remaining pickups and time.
+    for volunteer in volunteers:
+        if volunteer["volunteer_id"] == assignment["volunteer_id"]:
+            volunteer["max_pickups"] -= 1
+            volunteer["available_from"] = assignment["scheduled_time"]
+            break
