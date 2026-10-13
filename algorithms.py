@@ -1,7 +1,7 @@
 """FIFO baseline and urgency-first greedy scheduling (algorithm lead).
 
-Proposed greedy rule: earliest expiry_time, then largest quantity, then earliest
-ready_time. Complete ties keep input order. Confirm this rule with the team.
+Team-agreed greedy rule: earliest expiry_time, then largest quantity, then earliest
+ready_time. Complete ties keep input order.
 """
 
 from copy import deepcopy

@@ -10,7 +10,9 @@ TODO: Describe the modules, input fields, and assignment records.
 
 ## Algorithms and complexity
 
-TODO: Confirm the greedy rule with the team and add actual comparison results.
+The team has agreed on the greedy priority rule described below.
+
+TODO: Add actual comparison results.
 
 ### Why we use greedy
 
