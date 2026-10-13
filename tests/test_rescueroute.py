@@ -115,10 +115,38 @@ class RescueRouteTests(unittest.TestCase):
                     self.assertEqual(assignment["scheduled_time"], 20)
                     self.assertTrue(assignment["decision_reason"].strip())
 
-    @unittest.skip("Test assertions are not implemented yet")
     def test_incompatible_food_type(self):
-        # TODO: Assert rejection when no recipient accepts the food type.
-        pass
+        # Step 1: Donate prepared meals to a recipient that only accepts produce.
+        donations = [{
+            "donation_id": "D-001", "donor_name": "Campus Cafe",
+            "food_type": "prepared_meals", "quantity": 6,
+            "expiry_time": 90, "pickup_area": "Campus", "ready_time": 0,
+        }]
+        recipients = [{
+            "recipient_id": "R-001", "organization_name": "Community Pantry",
+            "accepted_food_types": ["produce"], "capacity": 10,
+            "area": "Campus", "closing_time": 120,
+        }]
+        volunteers = [{
+            "volunteer_id": "V-001", "vehicle_capacity": 8, "area": "Campus",
+            "available_from": 0, "available_until": 120, "max_pickups": 2,
+        }]
+
+        # Step 2: Run scheduling with enough capacity and time for a pickup.
+        validate_data(donations, recipients, volunteers)
+        assignments = schedule_fifo(
+            donations, recipients, volunteers, check_match, update_resources
+        )
+
+        # Step 3: Check the food type caused a rejection, with no assigned pair.
+        self.assertEqual(len(assignments), 1)
+        assignment = assignments[0]
+        self.assertEqual(assignment["donation_id"], "D-001")
+        self.assertEqual(assignment["status"], "unassigned")
+        self.assertIsNone(assignment["recipient_id"])
+        self.assertIsNone(assignment["volunteer_id"])
+        self.assertIsNone(assignment["scheduled_time"])
+        self.assertIn("does not accept this food type", assignment["decision_reason"])
 
     @unittest.skip("Test assertions are not implemented yet")
     def test_insufficient_recipient_capacity(self):
