@@ -71,10 +71,49 @@ class RescueRouteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate donation_id"):
             validate_data(donations, [], [])
 
-    @unittest.skip("Test assertions are not implemented yet")
     def test_expired_or_nearly_expired_donation(self):
-        # TODO: Assert the agreed expiry boundary and near-expiry behavior.
-        pass
+        # Step 1: The volunteer can pick up the food at minute 20.
+        donations = [{
+            "donation_id": "D-001", "donor_name": "Campus Cafe",
+            "food_type": "prepared_meals", "quantity": 6,
+            "expiry_time": 19, "pickup_area": "Campus", "ready_time": 0,
+        }]
+        recipients = [{
+            "recipient_id": "R-001", "organization_name": "Community Shelter",
+            "accepted_food_types": ["prepared_meals"], "capacity": 10,
+            "area": "Campus", "closing_time": 120,
+        }]
+        volunteers = [{
+            "volunteer_id": "V-001", "vehicle_capacity": 8, "area": "Campus",
+            "available_from": 20, "available_until": 120, "max_pickups": 2,
+        }]
+
+        # Step 2: Try food expiring before, at, and one minute after pickup.
+        for expiry_time in (19, 20, 21):
+            with self.subTest(expiry_time=expiry_time):
+                donations[0]["expiry_time"] = expiry_time
+                validate_data(donations, recipients, volunteers)
+                assignments = schedule_fifo(
+                    donations, recipients, volunteers, check_match, update_resources
+                )
+                self.assertEqual(len(assignments), 1)
+                assignment = assignments[0]
+                self.assertEqual(assignment["donation_id"], "D-001")
+
+                # Pickup at or after expiry must be rejected.
+                if expiry_time <= 20:
+                    self.assertEqual(assignment["status"], "unassigned")
+                    self.assertIsNone(assignment["recipient_id"])
+                    self.assertIsNone(assignment["volunteer_id"])
+                    self.assertIsNone(assignment["scheduled_time"])
+                    self.assertIn("expires", assignment["decision_reason"])
+                else:
+                    # One minute left is enough in our no-travel-time model.
+                    self.assertEqual(assignment["status"], "assigned")
+                    self.assertEqual(assignment["recipient_id"], "R-001")
+                    self.assertEqual(assignment["volunteer_id"], "V-001")
+                    self.assertEqual(assignment["scheduled_time"], 20)
+                    self.assertTrue(assignment["decision_reason"].strip())
 
     @unittest.skip("Test assertions are not implemented yet")
     def test_incompatible_food_type(self):
