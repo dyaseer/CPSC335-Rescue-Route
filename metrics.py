@@ -4,6 +4,8 @@
 def calculate_metrics(donations, recipients, volunteers, assignments):
     """Return a metrics dictionary using original inputs and scheduler results.
     
+    Use the original input capacities and pickup limits, before scheduling.
+    Volunteer utilization measures food rescued against total allowed pickup capacity.
     Keep in mind that any urgency rates, or any rates that are returned, are returned in percentage form,
     eg. 0% through 100% = 0 through 100"""
 
@@ -70,8 +72,10 @@ def calculate_metrics(donations, recipients, volunteers, assignments):
     total_recipient_capacity = sum(
         recipient["capacity"] for recipient in recipients
     )
+    # Each volunteer can carry their vehicle capacity on each allowed pickup.
     total_volunteer_capacity = sum(
-        volunteer["vehicle_capacity"] for volunteer in volunteers
+        volunteer["vehicle_capacity"] * volunteer["max_pickups"]
+        for volunteer in volunteers
     )
 
     recipient_capacity_utilization = (

@@ -10,9 +10,39 @@ import unittest
 from algorithms import schedule_fifo
 from data_loader import validate_data
 from matching import check_match, update_resources
+from metrics import calculate_metrics
 
 
 class RescueRouteTests(unittest.TestCase):
+    def test_volunteer_capacity_utilization(self):
+        # Two assigned donations rescue 12 units in total.
+        donations = [
+            {"donation_id": "D-001", "quantity": 6, "expiry_time": 90},
+            {"donation_id": "D-002", "quantity": 6, "expiry_time": 30},
+        ]
+        assignments = [
+            {"donation_id": "D-001", "status": "assigned"},
+            {"donation_id": "D-002", "status": "assigned"},
+        ]
+        recipients = [{"capacity": 20}]
+        volunteers = [{"vehicle_capacity": 8, "max_pickups": 2}]
+
+        # Two pickups allow 16 units, so 12 units uses 75% of that capacity.
+        result = calculate_metrics(donations, recipients, volunteers, assignments)
+        self.assertAlmostEqual(result["volunteer_capacity_utilization"], 75.0)
+
+        # Include every volunteer's allowed pickup capacity in the total.
+        volunteers.append({"vehicle_capacity": 4, "max_pickups": 1})
+        result = calculate_metrics(donations, recipients, volunteers, assignments)
+        self.assertAlmostEqual(result["volunteer_capacity_utilization"], 60.0)
+
+        # No pickup capacity should return zero without dividing by zero.
+        for volunteers in ([], [{"vehicle_capacity": 8, "max_pickups": 0}],
+                           [{"vehicle_capacity": 0, "max_pickups": 2}]):
+            with self.subTest(volunteers=volunteers):
+                result = calculate_metrics([], [], volunteers, [])
+                self.assertEqual(result["volunteer_capacity_utilization"], 0.0)
+
     def test_normal_matching(self):
         # Step 1: Create one donation, recipient, and volunteer that can match.
         donations = [{
