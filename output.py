@@ -1,33 +1,77 @@
-"""Console output (product and quality lead)."""
+
+"""Human-readable console output for RescueRoute."""
 
 
-def print_assignments(strategy_name, assignments):
-    """Print each donation's outcome and decision_reason; return None."""
-    # Show which strategy produced these results.
-    print(f"\n{strategy_name} assignments")
-    # Stop here if there are no donations to display.
+def print_assignments(
+    strategy_name, assignments, donations, recipients
+):
+    """Display assignment results and explanations."""
+
+    print(f"\n{'=' * 12} {strategy_name} Assignments {'=' * 12}")
+
     if not assignments:
         print("No donations to process.")
         return
 
-    # Show each donation and whether it found a match.
+    donation_by_id = {
+        donation["donation_id"]: donation
+        for donation in donations
+    }
+
+    recipient_by_id = {
+        recipient["recipient_id"]: recipient
+        for recipient in recipients
+    }
+
     for assignment in assignments:
         donation_id = assignment["donation_id"]
-        if assignment["status"] == "assigned":
-            # A matched donation has a recipient, volunteer, and pickup time.
-            print(f"{donation_id}: assigned.")
-            print("  Recipient:", assignment["recipient_id"])
-            print("  Volunteer:", assignment["volunteer_id"])
-            print("  Pickup time (minutes):", assignment["scheduled_time"])
+        status = assignment["status"]
+        donation = donation_by_id.get(donation_id)
+
+        print()
+
+        if status == "assigned":
+            recipient = recipient_by_id.get(assignment["recipient_id"])
+            recipient_name = (
+                recipient["organization_name"]
+                if recipient
+                else assignment["recipient_id"]
+            )
+
+            volunteer_id = assignment["volunteer_id"]
+            scheduled_time = assignment["scheduled_time"]
+
+            print(f"[ASSIGNED] Donation {donation_id}")
+
+            print(
+                f"Donation {donation_id} was assigned to "
+                f"{recipient_name} with volunteer {volunteer_id} "
+                f"because {assignment['decision_reason']}."
+            )
+
+            print(
+                f"Scheduled pickup: minute {scheduled_time} "
+                f"of the simulation."
+            )
+
         else:
-            print(f"{donation_id}: unassigned.")
-        # Explain the result, whether the donation was assigned or rejected.
-        print("  Reason:", assignment["decision_reason"])
+            print(f"[UNASSIGNED] Donation {donation_id}")
+
+            print(
+                f"Donation {donation_id} could not be assigned. "
+                f"{assignment['decision_reason']}."
+            )
+
+        # Greedy results include a separate explanation of priority order.
+        scheduling_reason = assignment.get("scheduling_reason")
+
+        if scheduling_reason:
+            print(f"Scheduling decision: {scheduling_reason}")
 
 
 def print_comparison(fifo_metrics, greedy_metrics, differences):
-    """Print both strategies' metrics and comparison differences; return None."""
-    # Give the dictionary keys readable names for the console.
+    """Print strategy metrics and the greedy-minus-FIFO differences."""
+
     labels = {
         "donations_received": "Donations received",
         "donations_assigned": "Donations assigned",
@@ -38,7 +82,7 @@ def print_comparison(fifo_metrics, greedy_metrics, differences):
         "recipient_capacity_utilization": "Recipient capacity utilization",
         "volunteer_capacity_utilization": "Volunteer capacity utilization",
     }
-    # These values are percentages; the others are counts or quantities.
+
     percentage_metrics = {
         "urgent_rescue_rate",
         "recipient_capacity_utilization",
@@ -46,21 +90,30 @@ def print_comparison(fifo_metrics, greedy_metrics, differences):
     }
 
     print("\nFIFO vs. greedy comparison")
-    # Show the FIFO and greedy values for each metric.
+
     for metric, label in labels.items():
         print(label)
+
         if metric in percentage_metrics:
-            # Show percentages with one digit after the decimal point.
             print(f"  FIFO: {fifo_metrics[metric]:.1f}%")
             print(f"  Greedy: {greedy_metrics[metric]:.1f}%")
         else:
-            print("  FIFO:", fifo_metrics[metric])
-            print("  Greedy:", greedy_metrics[metric])
+            print(f"  FIFO: {fifo_metrics[metric]}")
+            print(f"  Greedy: {greedy_metrics[metric]}")
 
-        # Show a difference only when compare_strategies calculated one.
         if metric in differences:
-            if metric in percentage_metrics:
-                # For example, 75% minus 50% is 25 percentage points.
-                print("  Greedy minus FIFO:", differences[metric], "percentage points")
+            if metric == "urgent_rescue_rate":
+                print(
+                    f"  Greedy minus FIFO: "
+                    f"{differences[metric]:.1f} percentage points"
+                )
+            elif metric in percentage_metrics:
+                print(
+                    f"  Greedy minus FIFO: "
+                    f"{differences[metric]:.1f} percentage points"
+                )
             else:
-                print("  Greedy minus FIFO:", differences[metric])
+                print(
+                    f"  Greedy minus FIFO: "
+                    f"{differences[metric]}"
+                )

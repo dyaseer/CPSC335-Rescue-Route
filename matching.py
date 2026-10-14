@@ -1,68 +1,96 @@
-"""Feasibility checks and resource updates (data and matching lead).
 
-These functions can be passed directly to algorithms.schedule_fifo.
-Use the existing lists of dictionaries; no custom data classes are needed.
-Times are minutes from the simulation start. Agree on travel/service time
-and area compatibility before implementing the checks and updates.
-"""
+"""Feasibility checks and resource updates for RescueRoute."""
 
 
 def check_match(donation, recipient, volunteer):
-    """Return (feasible, scheduled_time, reason) without changing any records.
+    """Return (feasible, scheduled_time, reason) without changing records."""
 
-    For rejection, return (False, None, a human-readable reason).
-    For a match, return (True, scheduled_time, a human-readable reason).
-
-    Inputs must already be validated. This simple model requires matching areas
-    and uses no travel or service time. Pickup must happen before expiry,
-    closing time, and the end of volunteer availability.
-    """
-    # Step 1: Check food type and location.
+    # Check food compatibility and location.
     if donation["food_type"] not in recipient["accepted_food_types"]:
-        return False, None, "Recipient does not accept this food type"
+        return False, None, (
+            f"{recipient['organization_name']} does not accept "
+            f"{donation['food_type'].replace('_', ' ')}"
+        )
+
     if donation["pickup_area"] != recipient["area"]:
-        return False, None, "Recipient is in a different area"
+        return False, None, (
+            f"{recipient['organization_name']} is in a different area"
+        )
+
     if donation["pickup_area"] != volunteer["area"]:
-        return False, None, "Volunteer is in a different area"
+        return False, None, (
+            f"volunteer {volunteer['volunteer_id']} is in a different area"
+        )
 
-    # Step 2: Check space and remaining pickups.
+    # Check remaining recipient capacity and vehicle capacity.
     if donation["quantity"] > recipient["capacity"]:
-        return False, None, "Insufficient recipient capacity"
+        return False, None, (
+            f"{recipient['organization_name']} has insufficient "
+            f"remaining capacity ({recipient['capacity']} units available, "
+            f"{donation['quantity']} required)"
+        )
+
     if donation["quantity"] > volunteer["vehicle_capacity"]:
-        return False, None, "Insufficient vehicle capacity"
+        return False, None, (
+            f"volunteer {volunteer['volunteer_id']} cannot carry "
+            f"{donation['quantity']} units "
+            f"(vehicle capacity: {volunteer['vehicle_capacity']} units)"
+        )
+
     if volunteer["max_pickups"] <= 0:
-        return False, None, "Volunteer has no pickups remaining"
+        return False, None, (
+            f"volunteer {volunteer['volunteer_id']} has no pickups remaining"
+        )
 
-    # Step 3: Find the earliest pickup time and check the deadlines.
-    scheduled_time = max(donation["ready_time"], volunteer["available_from"])
-    if scheduled_time >= donation["expiry_time"]:
-        return False, None, "Donation expires before it can be picked up"
-    if scheduled_time >= recipient["closing_time"]:
-        return False, None, "Recipient is closed at pickup time"
-    if scheduled_time >= volunteer["available_until"]:
-        return False, None, "Volunteer is unavailable at pickup time"
-
-    return True, scheduled_time, (
-        "Food type and areas match; enough recipient and vehicle capacity is "
-        "available; volunteer has pickups remaining; pickup is before expiry, "
-        "recipient closing, and the end of volunteer availability"
+    # Find the earliest possible pickup time.
+    scheduled_time = max(
+        donation["ready_time"],
+        volunteer["available_from"]
     )
+
+    # Check all deadlines.
+    if scheduled_time >= donation["expiry_time"]:
+        return False, None, (
+            f"the donation expires at minute {donation['expiry_time']}, "
+            f"before pickup can occur at minute {scheduled_time}"
+        )
+
+    if scheduled_time >= recipient["closing_time"]:
+        return False, None, (
+            f"{recipient['organization_name']} closes at minute "
+            f"{recipient['closing_time']}, before pickup can occur"
+        )
+
+    if scheduled_time >= volunteer["available_until"]:
+        return False, None, (
+            f"volunteer {volunteer['volunteer_id']} is unavailable "
+            f"by pickup time {scheduled_time}"
+        )
+
+    # Explain why this match is feasible.
+    remaining_minutes = donation["expiry_time"] - scheduled_time
+    food_type = donation["food_type"].replace("_", " ")
+
+    reason = (
+        f"it expires in {remaining_minutes} minutes after the scheduled "
+        f"pickup; {recipient['organization_name']} accepts {food_type}; "
+        f"{recipient['capacity']} units of recipient capacity remain "
+        f"and {donation['quantity']} are required; and volunteer "
+        f"{volunteer['volunteer_id']} can carry the quantity and "
+        f"has pickups remaining"
+    )
+
+    return True, scheduled_time, reason
 
 
 def update_resources(assignment, donation, recipients, volunteers):
-    """Update the assigned recipient and volunteer in the scheduler's copies.
+    """Update remaining recipient capacity and volunteer availability."""
 
-    Return None. Called only after an assignment with status 'assigned'.
-    Pickup is instantaneous, so the volunteer is available again at that time.
-    Vehicle capacity stays the same because it limits each pickup.
-    """
-    # Step 1: Find the selected recipient and reduce remaining capacity.
     for recipient in recipients:
         if recipient["recipient_id"] == assignment["recipient_id"]:
             recipient["capacity"] -= donation["quantity"]
             break
 
-    # Step 2: Find the selected volunteer and update remaining pickups and time.
     for volunteer in volunteers:
         if volunteer["volunteer_id"] == assignment["volunteer_id"]:
             volunteer["max_pickups"] -= 1
