@@ -3,8 +3,40 @@
     "volunteer_id": "V-001",
     "vehicle_capacity": 8,
     "area": "Campus",
+    "available_from": 50,
+    "available_until": 120,
+    "max_pickups": 2
+  },
+  {
+    "volunteer_id": "V-002",
+    "vehicle_capacity": 10,
+    "area": "City",
+    "available_from": 20,
+    "available_until": 90,
+    "max_pickups": 3
+  },
+  {
+    "volunteer_id": "V-003",
+    "vehicle_capacity": 5,
+    "area": "Neighborhood",
+    "available_from": 0,
+    "available_until": 60,
+    "max_pickups": 1
+  },
+  {
+    "volunteer_id": "V-004",
+    "vehicle_capacity": 12,
+    "area": "City",
     "available_from": 0,
     "available_until": 120,
+    "max_pickups": 4
+  },
+  {
+    "volunteer_id": "V-005",
+    "vehicle_capacity": 6,
+    "area": "Campus",
+    "available_from": 15,
+    "available_until": 90,
     "max_pickups": 2
   }
 ]
