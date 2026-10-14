@@ -46,7 +46,7 @@
     "available_from": 30,
     "available_until": 120,
     "max_pickups": 4
-  }
+  },
   {
     "volunteer_id": "V-007",
     "vehicle_capacity": 4,
@@ -54,5 +54,13 @@
     "available_from": 60,
     "available_until": 180,
     "max_pickups": 3
+  },
+    {
+    "volunteer_id": "V-008",
+    "vehicle_capacity": 5,
+    "area": "City",
+    "available_from": 0,
+    "available_until": 90,
+    "max_pickups": 2
   }
 ]
