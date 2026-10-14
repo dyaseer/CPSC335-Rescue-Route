@@ -1,25 +1,12 @@
-"""FIFO baseline and urgency-first greedy scheduling (algorithm lead).
 
-Team-agreed greedy rule: earliest expiry_time, then largest quantity, then earliest
-ready_time. Complete ties keep input order.
-"""
+"""FIFO baseline and urgency-first greedy scheduling."""
 
 from copy import deepcopy
 
-# See README.md, "Complexity analysis", for scheduler costs and helper assumptions.
-
 
 def schedule_fifo(donations, recipients, volunteers, check_match, update_resources):
-    """Return one assignment or rejection per donation, in input order.
+    """Return one assignment or rejection per donation in input order."""
 
-    Inputs are validated lists of dictionaries. The data lead supplies:
-    check_match(donation, recipient, volunteer) -> (feasible, time, reason)
-    update_resources(assignment, donation, recipients, volunteers) -> None
-
-    check_match must not change resources. update_resources changes the working
-    copies after an assignment. Recipient and volunteer input order decides
-    which feasible pair is selected first.
-    """
     donations = deepcopy(donations)
     recipients = deepcopy(recipients)
     volunteers = deepcopy(volunteers)
@@ -34,6 +21,7 @@ def schedule_fifo(donations, recipients, volunteers, check_match, update_resourc
             "decision_reason": "No recipients or volunteers available.",
             "status": "unassigned",
         }
+
         rejection_reasons = []
 
         for recipient in recipients:
@@ -41,6 +29,7 @@ def schedule_fifo(donations, recipients, volunteers, check_match, update_resourc
                 feasible, scheduled_time, reason = check_match(
                     donation, recipient, volunteer
                 )
+
                 if feasible:
                     assignment.update({
                         "recipient_id": recipient["recipient_id"],
@@ -50,6 +39,7 @@ def schedule_fifo(donations, recipients, volunteers, check_match, update_resourc
                         "status": "assigned",
                     })
                     break
+
                 rejection_reasons.append(reason)
 
             if assignment["status"] == "assigned":
@@ -57,10 +47,13 @@ def schedule_fifo(donations, recipients, volunteers, check_match, update_resourc
 
         if assignment["status"] == "assigned":
             update_resources(assignment, donation, recipients, volunteers)
+
         elif rejection_reasons:
-            # Keep each distinct explanation once, in the order encountered.
-            assignment["decision_reason"] = "No feasible match: " + "; ".join(
-                dict.fromkeys(rejection_reasons)
+            unique_reasons = list(dict.fromkeys(rejection_reasons))
+            assignment["decision_reason"] = (
+                "No feasible match could be found. Reasons identified "
+                "during recipient and volunteer checks: "
+                + "; ".join(unique_reasons)
             )
 
         assignments.append(assignment)
@@ -69,35 +62,91 @@ def schedule_fifo(donations, recipients, volunteers, check_match, update_resourc
 
 
 def greedy_priority(donation):
-    """Return (expiry_time, -quantity, ready_time) for ascending sorting."""
-    # Negating quantity puts larger donations first when expiration is tied.
-    return (donation["expiry_time"], -donation["quantity"], donation["ready_time"])
-
-
-def schedule_greedy(donations, recipients, volunteers, check_match, update_resources):
-    """Schedule by expiry, then quantity, then ready time; preserve complete ties.
-
-    Use the same matching helpers as FIFO. sorted creates a new list, and FIFO
-    copies the records and resources so the original inputs stay unchanged.
-    """
-    ordered_donations = sorted(donations, key=greedy_priority)
-    return schedule_fifo(
-        ordered_donations, recipients, volunteers, check_match, update_resources
+    """Earlier expiry, then larger quantity, then earlier ready time."""
+    return (
+        donation["expiry_time"],
+        -donation["quantity"],
+        donation["ready_time"],
     )
 
 
-def compare_strategies(fifo_metrics, greedy_metrics):
-    """Return greedy-minus-FIFO differences for the three comparison metrics.
+def _describe_priority(previous, current):
+    """Explain why previous ranks ahead of current under the greedy rule."""
 
-    Both input dictionaries must contain the metric keys below. Positive values
-    favor greedy; negative values favor FIFO; zero indicates a tie. Urgent rescue
-    rates use percentages, so their difference is in percentage points.
-    """
+    if previous["expiry_time"] < current["expiry_time"]:
+        difference = current["expiry_time"] - previous["expiry_time"]
+        return (
+            f"{previous['donation_id']} had less remaining shelf life "
+            f"than {current['donation_id']} "
+            f"(its expiry was {difference} minutes earlier)"
+        )
+
+    if previous["quantity"] > current["quantity"]:
+        return (
+            f"their expiry times were tied, but "
+            f"{previous['donation_id']} had the larger quantity"
+        )
+
+    if previous["ready_time"] < current["ready_time"]:
+        return (
+            f"their expiry times and quantities were tied, but "
+            f"{previous['donation_id']} had the earlier ready time"
+        )
+
+    return (
+        f"{previous['donation_id']} appeared first in the input, "
+        f"and their greedy priority values were tied"
+    )
+
+
+def schedule_greedy(
+    donations, recipients, volunteers, check_match, update_resources
+):
+    """Schedule by urgency and record why each donation was considered."""
+
+    ordered_donations = sorted(donations, key=greedy_priority)
+
+    assignments = schedule_fifo(
+        ordered_donations,
+        recipients,
+        volunteers,
+        check_match,
+        update_resources,
+    )
+
+    # Record why each donation was considered at its position in the order.
+    for index, donation in enumerate(ordered_donations):
+        if index == 0:
+            reason = (
+                f"{donation['donation_id']} was considered first because "
+                f"it had the highest priority under the urgency-first "
+                f"greedy rule."
+            )
+        else:
+            previous = ordered_donations[index - 1]
+            explanation = _describe_priority(previous, donation)
+            reason = (
+                f"Donation {donation['donation_id']} was considered after "
+                f"{previous['donation_id']} because {explanation}."
+            )
+
+        assignments[index]["scheduling_reason"] = reason
+
+    return assignments
+
+
+def compare_strategies(fifo_metrics, greedy_metrics):
+    """Return greedy-minus-FIFO differences for the comparison metrics."""
+
     differences = {}
+
     for metric in (
         "donations_assigned",
         "food_quantity_rescued",
         "urgent_rescue_rate",
     ):
-        differences[metric] = greedy_metrics[metric] - fifo_metrics[metric]
+        differences[metric] = (
+            greedy_metrics[metric] - fifo_metrics[metric]
+        )
+
     return differences
