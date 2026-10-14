@@ -38,5 +38,21 @@
     "available_from": 15,
     "available_until": 90,
     "max_pickups": 2
+  },
+  {
+    "volunteer_id": "V-006",
+    "vehicle_capacity": 4,
+    "area": "Neighborhood",
+    "available_from": 30,
+    "available_until": 120,
+    "max_pickups": 4
+  }
+  {
+    "volunteer_id": "V-007",
+    "vehicle_capacity": 4,
+    "area": "Campus",
+    "available_from": 60,
+    "available_until": 180,
+    "max_pickups": 3
   }
 ]
