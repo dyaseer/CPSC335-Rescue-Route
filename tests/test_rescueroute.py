@@ -7,7 +7,7 @@ unfinished work, not evidence that the program works.
 
 import unittest
 
-from algorithms import schedule_fifo
+from algorithms import schedule_fifo, schedule_greedy
 from data_loader import validate_data
 from matching import check_match, update_resources
 from metrics import calculate_metrics
@@ -179,6 +179,51 @@ class RescueRouteTests(unittest.TestCase):
         self.assertIn(
             "does not accept",
             assignment["decision_reason"]
+        )
+
+    def test_greedy_scheduling_reason(self):
+        donations = [
+            {
+                "donation_id": "D-1014",
+                "food_type": "prepared_meals",
+                "quantity": 4,
+                "expiry_time": 90,
+                "pickup_area": "Campus",
+                "ready_time": 0,
+            },
+            {
+                "donation_id": "D-1002",
+                "food_type": "prepared_meals",
+                "quantity": 4,
+                "expiry_time": 30,
+                "pickup_area": "Campus",
+                "ready_time": 0,
+            },
+        ]
+
+        assignments = schedule_greedy(
+            donations, [], [],
+            check_match, update_resources
+        )
+
+        self.assertEqual(
+            [a["donation_id"] for a in assignments],
+            ["D-1002", "D-1014"]
+        )
+
+        self.assertIn(
+            "considered first",
+            assignments[0]["scheduling_reason"]
+        )
+
+        self.assertIn(
+            "D-1002",
+            assignments[1]["scheduling_reason"]
+        )
+
+        self.assertIn(
+            "less remaining shelf life",
+            assignments[1]["scheduling_reason"]
         )
 
     @unittest.skip("Test assertions are not implemented yet")
