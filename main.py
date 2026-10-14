@@ -34,8 +34,17 @@ def main():
     )
     # Step 5: Compare the results and show the decisions for both strategies.
     differences = compare_strategies(fifo_metrics, greedy_metrics)
-    print_assignments("FIFO", fifo_assignments)
-    print_assignments("Greedy", greedy_assignments)
+
+
+    print_assignments(
+        "FIFO", fifo_assignments, donations, recipients
+    )
+
+    print_assignments(
+        "Greedy", greedy_assignments, donations, recipients
+    )
+
+
     print_comparison(fifo_metrics, greedy_metrics, differences)
 
 
