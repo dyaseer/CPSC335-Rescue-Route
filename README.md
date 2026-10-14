@@ -126,7 +126,9 @@ Check these assumptions again when the data lead finishes the matching helpers.
 ## Tests
 
 Run `python -m unittest discover -s tests -v`.
-The current test skeletons are skipped and do not validate program behavior yet.
+The suite has 12 behavior tests covering matching, validation, capacity and
+availability limits, competing donations, empty inputs, metrics, FIFO versus
+greedy outcomes, greedy explanations, and fairness. No tests are skipped.
 
 ## Assumptions and limitations
 
@@ -135,4 +137,15 @@ are discussed above.
 
 ## Team contributions and references
 
-TODO: Add roles, contributions, external references, and course-required AI disclosure.
+TODO: Add team roles, individual contributions, and external references.
+
+### AI assistance disclosure
+
+OpenAI Codex was used to help write the six previously unfinished automated
+tests: insufficient recipient capacity, unavailable or undersized volunteers,
+competing donations, empty input, FIFO-versus-greedy differences, and fairness.
+This assistance included shared test helpers, edge cases, and assertions for
+expected assignments, rejection explanations, metrics, and unchanged input data.
+Codex ran the full test suite after these changes; all 12 tests passed with no
+skipped tests. Team members remain responsible for reviewing, understanding,
+and verifying the submitted tests and following the course's AI-use policy.

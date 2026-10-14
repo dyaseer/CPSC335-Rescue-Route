@@ -1,14 +1,16 @@
-"""Behavior tests and unfinished test skeletons (product and quality lead).
+"""Behavior tests (product and quality lead).
 
 Run with: python -m unittest discover -s tests -v
-Remove each test's skip decorator as real assertions are added. Skipped tests are
-unfinished work, not evidence that the program works.
 """
 
+from copy import deepcopy
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 
-from algorithms import schedule_fifo, schedule_greedy
-from data_loader import validate_data
+from algorithms import compare_strategies, schedule_fifo, schedule_greedy
+from data_loader import load_json, validate_data
 from matching import check_match, update_resources
 from metrics import calculate_metrics
 
@@ -226,32 +228,214 @@ class RescueRouteTests(unittest.TestCase):
             assignments[1]["scheduling_reason"]
         )
 
-    @unittest.skip("Test assertions are not implemented yet")
+    def matching_data(self):
+        """Return fresh valid records for the scheduling edge cases."""
+        return ([{
+            "donation_id": "D-001", "donor_name": "Campus Cafe",
+            "food_type": "prepared_meals", "quantity": 6,
+            "expiry_time": 90, "pickup_area": "Campus", "ready_time": 10,
+        }], [{
+            "recipient_id": "R-001", "organization_name": "Community Shelter",
+            "accepted_food_types": ["prepared_meals"], "capacity": 10,
+            "area": "Campus", "closing_time": 120,
+        }], [{
+            "volunteer_id": "V-001", "vehicle_capacity": 8, "area": "Campus",
+            "available_from": 0, "available_until": 120, "max_pickups": 2,
+        }])
+
+    def assert_unassigned(self, assignment, reason):
+        self.assertEqual(assignment["status"], "unassigned")
+        self.assertIsNone(assignment["recipient_id"])
+        self.assertIsNone(assignment["volunteer_id"])
+        self.assertIsNone(assignment["scheduled_time"])
+        self.assertIn(reason, assignment["decision_reason"])
+
     def test_insufficient_recipient_capacity(self):
-        # TODO: Assert rejection when recipient capacity is too small.
-        pass
+        for scheduler in (schedule_fifo, schedule_greedy):
+            # One unit short must fail; exactly enough space must succeed.
+            for capacity in (5, 6):
+                with self.subTest(strategy=scheduler.__name__, capacity=capacity):
+                    donations, recipients, volunteers = self.matching_data()
+                    recipients[0]["capacity"] = capacity
+                    validate_data(donations, recipients, volunteers)
+                    assignments = scheduler(
+                        donations, recipients, volunteers, check_match, update_resources
+                    )
+                    self.assertEqual(len(assignments), 1)
+                    self.assertEqual(assignments[0]["donation_id"], "D-001")
+                    if capacity < 6:
+                        self.assert_unassigned(assignments[0], "insufficient remaining capacity")
+                    else:
+                        self.assertEqual(assignments[0]["status"], "assigned")
+                        self.assertEqual(assignments[0]["recipient_id"], "R-001")
 
-    @unittest.skip("Test assertions are not implemented yet")
     def test_unavailable_or_undersized_volunteer(self):
-        # TODO: Assert rejection for unavailable drivers and small vehicles.
-        pass
+        cases = (
+            ({"vehicle_capacity": 5}, "cannot carry"),
+            ({"available_until": 10}, "unavailable"),
+            ({"available_from": 90}, "expires"),
+            ({"max_pickups": 0}, "no pickups remaining"),
+        )
+        for scheduler in (schedule_fifo, schedule_greedy):
+            for changes, reason in cases:
+                with self.subTest(strategy=scheduler.__name__, changes=changes):
+                    donations, recipients, volunteers = self.matching_data()
+                    volunteers[0].update(changes)
+                    validate_data(donations, recipients, volunteers)
+                    assignments = scheduler(
+                        donations, recipients, volunteers, check_match, update_resources
+                    )
+                    self.assertEqual(len(assignments), 1)
+                    self.assertEqual(assignments[0]["donation_id"], "D-001")
+                    self.assert_unassigned(assignments[0], reason)
 
-    @unittest.skip("Test assertions are not implemented yet")
     def test_competing_donations(self):
-        # TODO: Assert capacity is not reused after an assignment.
-        pass
+        cases = (
+            (6, 2, "insufficient remaining capacity"),
+            (12, 1, "no pickups remaining"),
+            (12, 2, None),
+        )
+        for scheduler in (schedule_fifo, schedule_greedy):
+            for capacity, pickups, rejection in cases:
+                with self.subTest(strategy=scheduler.__name__, capacity=capacity,
+                                  pickups=pickups):
+                    donations, recipients, volunteers = self.matching_data()
+                    donations.append(dict(donations[0], donation_id="D-002"))
+                    recipients[0]["capacity"] = capacity
+                    volunteers[0].update(vehicle_capacity=6, max_pickups=pickups)
+                    validate_data(donations, recipients, volunteers)
+                    original = deepcopy((donations, recipients, volunteers))
+                    assignments = scheduler(
+                        donations, recipients, volunteers, check_match, update_resources
+                    )
+                    self.assertEqual(
+                        [a["donation_id"] for a in assignments], ["D-001", "D-002"]
+                    )
+                    self.assertEqual(assignments[0]["status"], "assigned")
+                    if rejection:
+                        self.assert_unassigned(assignments[1], rejection)
+                    else:
+                        # Vehicle capacity limits each pickup, so it can be reused.
+                        self.assertEqual(assignments[1]["status"], "assigned")
+                    metrics = calculate_metrics(
+                        donations, recipients, volunteers, assignments
+                    )
+                    self.assertEqual(metrics["food_quantity_rescued"],
+                                     6 if rejection else 12)
+                    self.assertEqual((donations, recipients, volunteers), original)
 
-    @unittest.skip("Test assertions are not implemented yet")
     def test_empty_input(self):
-        # TODO: Assert behavior for empty lists, empty files, and zero denominators.
-        pass
+        with TemporaryDirectory() as folder:
+            file_path = Path(folder) / "empty.json"
+            file_path.write_text("[]", encoding="utf-8")
+            self.assertEqual(load_json(file_path), [])
+            self.assertIsNone(validate_data([], [], []))
+            # A zero-byte file is invalid JSON rather than an empty dataset.
+            file_path.write_text("", encoding="utf-8")
+            with self.assertRaises(json.JSONDecodeError):
+                load_json(file_path)
 
-    @unittest.skip("Test assertions are not implemented yet")
+        for scheduler in (schedule_fifo, schedule_greedy):
+            for missing in ("all", "donations", "recipients", "volunteers"):
+                with self.subTest(strategy=scheduler.__name__, missing=missing):
+                    donations, recipients, volunteers = self.matching_data()
+                    if missing in ("all", "donations"):
+                        donations = []
+                    if missing in ("all", "recipients"):
+                        recipients = []
+                    if missing in ("all", "volunteers"):
+                        volunteers = []
+                    validate_data(donations, recipients, volunteers)
+                    assignments = scheduler(
+                        donations, recipients, volunteers, check_match, update_resources
+                    )
+                    if not donations:
+                        self.assertEqual(assignments, [])
+                    else:
+                        self.assertEqual(len(assignments), 1)
+                        self.assert_unassigned(assignments[0], "No recipients or volunteers")
+                    self.assertEqual(
+                        calculate_metrics(donations, recipients, volunteers, assignments),
+                        {
+                            "donations_received": len(donations),
+                            "donations_assigned": 0,
+                            "donations_unassigned": len(donations),
+                            "food_quantity_rescued": 0,
+                            "food_quantity_at_risk": 6 * len(donations),
+                            "urgent_rescue_rate": 0.0,
+                            "recipient_capacity_utilization": 0.0,
+                            "volunteer_capacity_utilization": 0.0,
+                        },
+                    )
+
     def test_fifo_and_greedy_differ(self):
-        # TODO: Assert different expected outcomes on the same original data.
-        pass
+        donations, recipients, volunteers = self.matching_data()
+        donations.append(dict(donations[0], donation_id="D-002", expiry_time=30))
+        validate_data(donations, recipients, volunteers)
+        original = deepcopy((donations, recipients, volunteers))
+        results = []
+        for scheduler, winner in ((schedule_fifo, "D-001"),
+                                  (schedule_greedy, "D-002")):
+            assignments = scheduler(
+                donations, recipients, volunteers, check_match, update_resources
+            )
+            self.assertEqual(len(assignments), 2)
+            self.assertEqual(assignments[0]["donation_id"], winner)
+            self.assertEqual(assignments[0]["status"], "assigned")
+            self.assertEqual(assignments[0]["recipient_id"], "R-001")
+            self.assertEqual(assignments[0]["volunteer_id"], "V-001")
+            self.assertEqual(assignments[0]["scheduled_time"], 10)
+            loser = "D-002" if winner == "D-001" else "D-001"
+            self.assertEqual(assignments[1]["donation_id"], loser)
+            self.assert_unassigned(assignments[1], "insufficient remaining capacity")
+            self.assertEqual((donations, recipients, volunteers), original)
+            results.append(calculate_metrics(
+                donations, recipients, volunteers, assignments
+            ))
 
-    @unittest.skip("Test assertions are not implemented yet")
+        fifo_metrics, greedy_metrics = results
+        for metrics in results:
+            self.assertEqual(metrics["donations_assigned"], 1)
+            self.assertEqual(metrics["food_quantity_rescued"], 6)
+            self.assertEqual(metrics["food_quantity_at_risk"], 6)
+        self.assertEqual(fifo_metrics["urgent_rescue_rate"], 0.0)
+        self.assertEqual(greedy_metrics["urgent_rescue_rate"], 100.0)
+        self.assertEqual(compare_strategies(fifo_metrics, greedy_metrics), {
+            "donations_assigned": 0,
+            "food_quantity_rescued": 0,
+            "urgent_rescue_rate": 100.0,
+        })
+
     def test_fairness_or_starvation(self):
-        # TODO: Assert which donation is deferred and document why.
-        pass
+        donations, recipients, volunteers = self.matching_data()
+        donations[0]["quantity"] = 4
+        donations.append(dict(donations[0], donation_id="D-002", quantity=6))
+        recipients[0]["capacity"] = 6
+        validate_data(donations, recipients, volunteers)
+
+        # With equal expiry, greedy favors the larger, later-arriving donation.
+        # The earlier small donor loses capacity despite being feasible alone.
+        # This shows unfairness in one run, not starvation across runs: rejected
+        # donations are not retained in a waiting queue by the current program.
+        alone = schedule_greedy(
+            donations[:1], recipients, volunteers, check_match, update_resources
+        )
+        self.assertEqual(alone[0]["status"], "assigned")
+        for scheduler, expected in (
+            (schedule_fifo, {"D-001": "assigned", "D-002": "unassigned"}),
+            (schedule_greedy, {"D-001": "unassigned", "D-002": "assigned"}),
+        ):
+            with self.subTest(strategy=scheduler.__name__):
+                assignments = scheduler(
+                    donations, recipients, volunteers, check_match, update_resources
+                )
+                self.assertEqual(len(assignments), 2)
+                self.assertEqual(
+                    {a["donation_id"]: a["status"] for a in assignments}, expected
+                )
+                for assignment in assignments:
+                    if assignment["status"] == "unassigned":
+                        self.assert_unassigned(assignment, "insufficient remaining capacity")
+                if scheduler is schedule_greedy:
+                    self.assertEqual(assignments[0]["donation_id"], "D-002")
+                    self.assertIn("larger quantity", assignments[1]["scheduling_reason"])
