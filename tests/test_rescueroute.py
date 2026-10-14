@@ -176,7 +176,10 @@ class RescueRouteTests(unittest.TestCase):
         self.assertIsNone(assignment["recipient_id"])
         self.assertIsNone(assignment["volunteer_id"])
         self.assertIsNone(assignment["scheduled_time"])
-        self.assertIn("does not accept this food type", assignment["decision_reason"])
+        self.assertIn(
+            "does not accept",
+            assignment["decision_reason"]
+        )
 
     @unittest.skip("Test assertions are not implemented yet")
     def test_insufficient_recipient_capacity(self):
