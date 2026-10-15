@@ -331,9 +331,9 @@ adds its sorting cost.
 ## Team contributions
 
 | Member | Role based on recorded work | 
-| Brian Nguyen | Algorithms, plus shared matching, testing, and writing work | Built FIFO, greedy, the priority rule, and strategy comparison; wrote complexity and fairness notes; completed matching and validation; connected the program; added output and tests; fixed volunteer capacity calculations. 
-| Jimmy | Data loading and sample data | Added JSON loading, early validation and ID checks, and more sample donors and volunteers.
-| Dawood | Metrics, clear output, and test updates | Created the repository; added counts and rates; expanded sample data; improved assignment and rejection messages; added greedy priority reasons and a test for them.
+- Brian Nguyen | Algorithms, plus shared matching, testing, and writing work | Built FIFO, greedy, the priority rule, and strategy comparison; wrote complexity and fairness notes; completed matching and validation; connected the program; added output and tests; fixed volunteer capacity calculations. 
+- Jimmy | Data loading and sample data | Added JSON loading, early validation and ID checks, and more sample donors and volunteers.
+- Dawood | Metrics, clear output, test updates, and demo | Created the repository; added counts and rates; expanded sample data; improved assignment and rejection messages; added greedy priority reasons and a test for them; created demo and any relevant additional deliverables
 
 ## References and sources
 
@@ -358,3 +358,7 @@ table based on the repository's commits. The program and tests were run again
 to check the documented results. Team members remain responsible for reviewing,
 understanding, and verifying the submitted code, tests, and writing, and for
 following the course's AI-use policy.
+
+Please Note: AI platforms such as (Gemini, ChatGPT), were used to explain certain
+concepts within the project, this may include situations where students were shown
+sample code on how to implement certain features.
