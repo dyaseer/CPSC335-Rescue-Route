@@ -100,7 +100,7 @@ protects the food that expires first, while the earlier donor loses their
 chance. It does not rescue more total food in this case. The sample and test
 show why we compare both total food saved and which donations get assigned.
 
-## Architecture: how the files work together
+## Architecture
 
 | File | What it does |
 | --- | --- |
@@ -123,7 +123,7 @@ duplicate IDs and count assigned donations once. Greedy uses a sorted list.
 Metrics uses a dictionary keyed by donation ID to look up food quantities.
 Accepted food types are stored in a list in the current code.
 
-## Data schema: fields in each record
+## Data Model
 
 Times are whole minutes from the start of the model. Quantities and capacities
 use the same made-up food unit. Text values must not be blank.
@@ -193,7 +193,7 @@ are not removed. The current sample contains a trailing space in `D-008 `.
 - Expired donations and donations ready at or after expiry are allowed as input. Matching rejects them when no valid pickup time exists.
 - Each donation gets one result per run. Unassigned donations are not saved for another run.
 
-## FIFO and greedy rules
+## FIFO and Greedy rules
 
 FIFO means first in, first out. It considers donations in input order. For each
 one, it chooses the first recipient and driver that pass the matching checks.
@@ -252,44 +252,6 @@ percentages. A rate with a zero total to divide by is 0%.
 
 Capacity rates include all listed recipients and drivers, even ones that cannot
 serve a particular donation. They do not measure driver working time.
-
-## Comparison report
-
-Results were checked on October 14, 2026, using sample data at commit
-[`10780a2`](https://github.com/dyaseer/CPSC335-Rescue-Route/commit/10780a2).
-Run `python main.py` to repeat the sample comparison.
-
-### Current sample files
-
-The sample has 8 donations totaling 61 units, 5 recipients with 58 units of
-space, and 8 drivers with 149 units of total allowed carrying space across
-their pickup limits.
-
-| Metric | FIFO | Greedy | Greedy minus FIFO |
-| --- | --- | --- | --- |
-| Donations received | 8 | 8 | 0 |
-| Donations assigned | 5 | 5 | 0 |
-| Donations unassigned | 3 | 3 | 0 |
-| Food quantity rescued | 30 units | 30 units | 0 units |
-| Food quantity at risk | 31 units | 31 units | 0 units |
-| Urgent rescue rate | 0% | 0% | 0 percentage points |
-| Recipient capacity utilization | 51.7% | 51.7% | 0 percentage points |
-| Volunteer capacity utilization | 20.1% | 20.1% | 0 percentage points |
-
-The report shows differences for every row. The program prints differences
-for assigned count, rescued quantity, and urgent rescue rate.
-
-Both strategies assign D-001, D-003, D-004, D-005, and D-007. Both reject:
-
-- D-002: it is ready at minute 15 and expires at minute 15. Pickup must be before expiry, so it cannot be rescued even if considered first.
-- D-006: no recipient accepts its baked goods.
-- D-008: D-005 uses the matching pantry's space first. The pantry also closes at minute 30, before D-008 is ready at minute 35. Either limit prevents this match; the program reports the capacity limit first for that recipient.
-
-The urgent group is D-002 alone, which explains the 0% urgent rescue rate.
-Greedy changes the order, but not which donations are rescued in this sample.
-For example, D-003 is picked up at minute 20 under FIFO and minute 35 under
-greedy. Both are valid in this model. Equal totals on this sample do not mean
-the strategies always give equal results.
 
 ## Algorithms and complexity
 

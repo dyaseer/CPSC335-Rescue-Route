@@ -21,7 +21,7 @@
     "area": "Neighborhood",
     "available_from": 0,
     "available_until": 60,
-    "max_pickups": 0
+    "max_pickups": 1
   },
   {
     "volunteer_id": "V-004",
