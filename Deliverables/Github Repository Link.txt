@@ -1,0 +1,2 @@
+The following link can be used to access the Github Repository:
+https://github.com/dyaseer/CPSC335-Rescue-Route
