@@ -11,7 +11,14 @@ food-safety system or a tool approved for real pickup work.
 
 Use Python 3.12 to match the version checked for this project (Python 3.12.3).
 The program and tests use Python's built-in tools. No extra packages are needed.
-Git is needed only if you want to clone the repository.
+Git is needed only if you want to clone the repository. 
+
+The project repository currently provides sample data that can be accessed in the 'data' folder,
+adhering to the provided format as well as any sample locations/areas that are described in the
+current lists.
+
+This program runs as a command-line Python application where it displays all relevant output in the
+command-line-interface when you run the project by the directions that are listed below:
 
 Download the repository, or clone it:
 
@@ -46,6 +53,52 @@ To try different inputs, edit the JSON files in `data/` and run again. Each file
 must contain a list of records. Use `[]` for an empty list. A blank file is not
 valid JSON. Invalid data stops the program with an error. There are no
 command-line options for choosing other input files.
+
+## Tests
+
+If you would like to run the dedicated unit tests for this project, you may run the following command:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+All 12 tests passed with no skipped tests on October 14, 2026. The tests check:
+
+1. Volunteer carrying-space use, including multiple pickups and zero capacity.
+2. A normal match with the right recipient, driver, and pickup time.
+3. Duplicate donation IDs.
+4. Donations expiring before, at, and just after pickup time.
+5. A recipient that does not accept the food type.
+6. Greedy order and its explanation.
+7. Too little recipient space and an exact-capacity match.
+8. Small vehicles, unavailable drivers, and drivers with no pickups left.
+9. Donations competing for space or pickups, without changing original inputs.
+10. Empty lists, a JSON file containing `[]`, an invalid blank file, and zero rates.
+11. Different FIFO and greedy choices on the same original data.
+12. A later, larger donation getting priority over an earlier, smaller one.
+
+Tests check expected results and reasons, rather than only whether the program runs.
+
+### Test case with different results
+
+`test_fifo_and_greedy_differ` uses its own data, separate from the sample files.
+D-001 appears first and expires at minute 90. D-002 appears second and expires
+at minute 30. Each has 6 units and is ready at minute 10. One recipient has
+10 units of space, and the driver can carry either donation. Only one fits.
+
+| Result | FIFO | Greedy |
+| --- | --- | --- |
+| Assigned donation | D-001 | D-002 |
+| Unassigned donation | D-002 | D-001 |
+| Donations assigned | 1 | 1 |
+| Food quantity rescued | 6 units | 6 units |
+| Food quantity at risk | 6 units | 6 units |
+| Urgent rescue rate | 0% | 100% |
+
+Greedy raises urgent rescue rate by 100 percentage points in this test. It
+protects the food that expires first, while the earlier donor loses their
+chance. It does not rescue more total food in this case. The sample and test
+show why we compare both total food saved and which donations get assigned.
 
 ## Architecture: how the files work together
 
@@ -238,27 +291,6 @@ For example, D-003 is picked up at minute 20 under FIFO and minute 35 under
 greedy. Both are valid in this model. Equal totals on this sample do not mean
 the strategies always give equal results.
 
-### Test case with different results
-
-`test_fifo_and_greedy_differ` uses its own data, separate from the sample files.
-D-001 appears first and expires at minute 90. D-002 appears second and expires
-at minute 30. Each has 6 units and is ready at minute 10. One recipient has
-10 units of space, and the driver can carry either donation. Only one fits.
-
-| Result | FIFO | Greedy |
-| --- | --- | --- |
-| Assigned donation | D-001 | D-002 |
-| Unassigned donation | D-002 | D-001 |
-| Donations assigned | 1 | 1 |
-| Food quantity rescued | 6 units | 6 units |
-| Food quantity at risk | 6 units | 6 units |
-| Urgent rescue rate | 0% | 100% |
-
-Greedy raises urgent rescue rate by 100 percentage points in this test. It
-protects the food that expires first, while the earlier donor loses their
-chance. It does not rescue more total food in this case. The sample and test
-show why we compare both total food saved and which donations get assigned.
-
 ## Algorithms and complexity
 
 **D** means donations, **R** means recipients, and **V** means volunteers.
@@ -295,31 +327,6 @@ O(D + R + V + D * R * V).
 With no drivers, FIFO still visits each recipient for each donation. A time
 bound covering empty lists too is O(D + R + V + D * (R * V + R + V)); greedy
 adds its sorting cost.
-
-## Tests
-
-From the project folder, run:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-All 12 tests passed with no skipped tests on October 14, 2026. The tests check:
-
-1. Volunteer carrying-space use, including multiple pickups and zero capacity.
-2. A normal match with the right recipient, driver, and pickup time.
-3. Duplicate donation IDs.
-4. Donations expiring before, at, and just after pickup time.
-5. A recipient that does not accept the food type.
-6. Greedy order and its explanation.
-7. Too little recipient space and an exact-capacity match.
-8. Small vehicles, unavailable drivers, and drivers with no pickups left.
-9. Donations competing for space or pickups, without changing original inputs.
-10. Empty lists, a JSON file containing `[]`, an invalid blank file, and zero rates.
-11. Different FIFO and greedy choices on the same original data.
-12. A later, larger donation getting priority over an earlier, smaller one.
-
-Tests check expected results and reasons, rather than only whether the program runs.
 
 ## Team contributions
 
