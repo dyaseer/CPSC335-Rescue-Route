@@ -3,14 +3,14 @@
     "recipient_id": "R-001",
     "organization_name": "Community Shelter",
     "accepted_food_types": ["prepared_meals", "produce"],
-    "capacity": 10,
-    "area": "Campus",
+    "capacity": 12,
+    "area": "Neighborhood",
     "closing_time": 120
   },
   {
     "recipient_id": "R-002",
     "organization_name": "City Food Bank",
-    "accepted_food_types": ["prepared_meals", "produce"],
+    "accepted_food_types": ["prepared_meals"],
     "capacity": 20,
     "area": "City",
     "closing_time": 60
@@ -19,15 +19,15 @@
     "recipient_id": "R-003",
     "organization_name": "Neighborhood Pantry",
     "accepted_food_types": ["prepared_meals"],
-    "capacity": 5,
+    "capacity": 10,
     "area": "Neighborhood",
     "closing_time": 30
   },
   {
     "recipient_id": "R-004",
     "organization_name": "Local Soup Kitchen",
-    "accepted_food_types": ["prepared_meals", "produce"],
-    "capacity": 15,
+    "accepted_food_types": ["produce"],
+    "capacity": 25,
     "area": "City",
     "closing_time": 90
   },
